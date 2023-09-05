@@ -4,7 +4,7 @@ Loads and Saves BVH files.
 
 
 import numpy as np
-
+from collections import defaultdict
 from net.graph import graph
 
 
@@ -79,7 +79,7 @@ class BVH:
         offsets = []
         nchannels = []
         channels = []
-        parents = {}
+        parents = defaultdict(list)
         parent = None
         stack = []
 
@@ -93,9 +93,9 @@ class BVH:
                     name.append(line.split()[1])
                 else:
                     name.append(f"{name[-1]}_End")
-                if parent:
-                    parents.update({parent: name[-1]})
+                parents[stack[-1]].append(name[-1])
                 stack.append(name[-1])
+                continue
             if "{" in line:
                 continue
             if "}" in line:
@@ -114,7 +114,6 @@ class BVH:
                 channels.append(chan[2::])
                 continue
 
-        print(parents)
         return name, offsets, nchannels, channels, parents
 
     def extract_motion_data(lines):

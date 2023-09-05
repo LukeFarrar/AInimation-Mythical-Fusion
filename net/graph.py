@@ -19,6 +19,7 @@ class graph:
         front_channel_pointer = 0
         back_channel_pointer = 0
         motion_data = np.split(motion_data, self.nframes)
+        parents = {value: key for key, values in parents.items() for value in values}
 
         for index in range(len(joints)):
             joint_rotations = np.array([])
@@ -31,7 +32,7 @@ class graph:
                             [],
                             [],
                             self.nframes,
-                            parents=list(self.nodes.values())[parents[index] - 1],
+                            parents= self.nodes[parents[joints[index]]],
                         ),
                     }
                 )
@@ -70,7 +71,7 @@ class graph:
                         [motion_data[i][back_channel_pointer:front_channel_pointer]],
                     )
                 # print(self.nodes.keys())
-                print(parents)
+                #print(parents)
                 # print(
                 #    (list(self.nodes.values())[index - 1]).name,
                 #    " : ",
@@ -84,7 +85,7 @@ class graph:
                             joint_channels,
                             joint_rotations,
                             self.nframes,
-                            parents=list(self.nodes.values())[parents[index] - 1],
+                            parents=self.nodes[parents[joints[index]]],
                         ),
                     }
                 )
