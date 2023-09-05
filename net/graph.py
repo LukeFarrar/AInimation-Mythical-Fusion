@@ -15,9 +15,9 @@ class graph:
         self.frame_time = float(frame_time)
 
     def create_graph(self, joints, offsets, channels, motion_data, parents):
-        counter = 0
-        front_pointer = 0
-        back_pointer = 0
+        num_endsites = 0
+        front_channel_pointer = 0
+        back_channel_pointer = 0
         motion_data = np.split(motion_data, self.nframes)
 
         for index in range(len(joints)):
@@ -35,16 +35,17 @@ class graph:
                         ),
                     }
                 )
-                counter += 1
+                num_endsites += 1
                 continue
 
-            joint_channels = channels[index - counter]
+            joint_channels = channels[index - num_endsites]
 
             if index == 0:
-                front_pointer = front_pointer + len(joint_channels)
+                front_channel_pointer = front_channel_pointer + len(joint_channels)
                 for i in range(self.nframes):
                     joint_rotations = np.append(
-                        joint_rotations, [motion_data[i][back_pointer:front_pointer]]
+                        joint_rotations,
+                        [motion_data[i][back_channel_pointer:front_channel_pointer]],
                     )
                 self.root = node(
                     str(joints[index]),
@@ -59,14 +60,22 @@ class graph:
                         str(joints[index]): self.root,
                     }
                 )
-                back_pointer = front_pointer
+                back_channel_pointer = front_channel_pointer
                 self.nodes[joints[index]].calculate_velocities(self.nframes)
             else:
-                front_pointer = front_pointer + len(joint_channels)
+                front_channel_pointer = front_channel_pointer + len(joint_channels)
                 for i in range(self.nframes):
                     joint_rotations = np.append(
-                        joint_rotations, [motion_data[i][back_pointer:front_pointer]]
+                        joint_rotations,
+                        [motion_data[i][back_channel_pointer:front_channel_pointer]],
                     )
+                # print(self.nodes.keys())
+                print(parents)
+                # print(
+                #    (list(self.nodes.values())[index - 1]).name,
+                #    " : ",
+                #    str(joints[index]),
+                # )
                 self.nodes.update(
                     {
                         str(joints[index]): node(
@@ -79,7 +88,7 @@ class graph:
                         ),
                     }
                 )
-                back_pointer = front_pointer
+                back_channel_pointer = front_channel_pointer
                 self.nodes[joints[index]].calculate_velocities(self.nframes)
 
     def calculate_global_positions(

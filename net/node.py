@@ -74,12 +74,20 @@ class node:
 
     def calculate_local_position(self):
         for index in range(len(self.rotations)):
-            self.positions_local.append(
-                np.matmul(
-                    quat.quat2rotmat(self.rotations[index]),
-                    self.offsets + self.parent.positions_local[index],
+            try:
+                self.positions_local.append(
+                    np.matmul(
+                        quat.quat2rotmat(self.rotations[index]),
+                        self.offsets + self.parent.positions_local[index],
+                    )
                 )
-            )
+            except:
+                print()
+                # print(self.parent.name)
+                # print(self.name)
+                # print(self.parent.positions_local)
+                # print(len(self.parent.positions_local))
+                # print(self.offsets + self.parent.positions_local[index])
 
     """
     def calculate_velocities(self, nframes):
