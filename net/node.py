@@ -18,21 +18,25 @@ from net.quat import quat
 
 class node:
     def __init__(self, name, offsets, channels, rotations, nframes, parents=None):
+        self.positions = []
         self.positions_local = []
         self.positions_global = []
         self.rotations = []
+        self.euler_rotation = []
         self.velocities = []
         self.channels = channels
 
         if len(channels) > 3:
             joint_rotations = np.split(rotations, nframes)
             for i in range(nframes):
-                self.positions_local.append(joint_rotations[i][:3])
+                self.positions.append(joint_rotations[i][:3])
                 self.rotations.append(joint_rotations[i][3:])
+                self.euler_rotation.append(joint_rotations[i][3:])
             self.rotations = [quat.euler2quat(x) for x in self.rotations]
         elif len(rotations) > 0:
             self.rotations = np.split(rotations, nframes)
             self.rotations = [quat.euler2quat(x) for x in self.rotations]
+            self.euler_rotation = np.split(rotations, nframes)
 
         self.name = str(name)
         self.offsets = offsets
@@ -43,9 +47,12 @@ class node:
             self.parent.add_child(self)
             self.calculate_local_position()
         else:
-            for index in range(len(self.positions_local)):
-                self.positions_local[index] = np.matmul(
-                    quat.quat2rotmat(self.rotations[index]), self.positions_local[index]
+            for index in range(len(self.positions)):
+                self.positions_local.append(
+                    np.matmul(
+                        quat.quat2rotmat(self.rotations[index]),
+                        self.positions[index],
+                    )
                 )
 
     def add_child(self, item):
@@ -74,20 +81,12 @@ class node:
 
     def calculate_local_position(self):
         for index in range(len(self.rotations)):
-            try:
-                self.positions_local.append(
-                    np.matmul(
-                        quat.quat2rotmat(self.rotations[index]),
-                        self.offsets + self.parent.positions_local[index],
-                    )
+            self.positions_local.append(
+                np.matmul(
+                    quat.quat2rotmat(self.rotations[index]),
+                    self.offsets + self.parent.positions_local[index],
                 )
-            except:
-                print()
-                # print(self.parent.name)
-                # print(self.name)
-                # print(self.parent.positions_local)
-                # print(len(self.parent.positions_local))
-                # print(self.offsets + self.parent.positions_local[index])
+            )
 
     """
     def calculate_velocities(self, nframes):
