@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.spatial.transform import Rotation
 
 
 class quat:
@@ -11,25 +12,41 @@ class quat:
     def identity():
         return np.array([0, 0, 0, 1])
 
-    def euler2quat(rotations):
-        roll = float(rotations[0])
-        pitch = float(rotations[1])
-        yaw = float(rotations[2])
+    def euler2quat(rotations, channels):
+        roll = float(rotations[0])  # z
+        pitch = float(rotations[1])  # y
+        yaw = float(rotations[2])  # x
 
-        cr = np.cos(roll * 0.5)
-        sr = np.sin(roll * 0.5)
-        cp = np.cos(pitch * 0.5)
-        sp = np.sin(pitch * 0.5)
-        cy = np.cos(yaw * 0.5)
-        sy = np.sin(yaw * 0.5)
+        r = Rotation.from_euler("xyz", [roll, pitch, yaw], degrees=True)
 
-        w = cr * cp * cy + sr * sp * sy
-        x = sr * cp * cy - cr * sp * sy
-        y = cr * sp * cy + sr * cp * sy
-        z = cr * cp * sy - sr * sp * cy
+        return r.as_quat()
 
-        return [w, x, y, z]
+        """
+        if channels == ["Zrotation", "Yrotation", "Xrotation"]:
+            roll = float(rotations[0])  # z
+            pitch = float(rotations[1])  # y
+            yaw = float(rotations[2])  # x
+        elif channels == ["Xrotation", "Yrotation", "Zrotation"]:
+            roll = float(rotations[2])  # z
+            pitch = float(rotations[1])  # y
+            yaw = float(rotations[0])  # x
+        
+        qx = np.sin(roll / 2) * np.cos(pitch / 2) * np.cos(yaw / 2) - np.cos(
+            roll / 2
+        ) * np.sin(pitch / 2) * np.sin(yaw / 2)
+        qy = np.cos(roll / 2) * np.sin(pitch / 2) * np.cos(yaw / 2) + np.sin(
+            roll / 2
+        ) * np.cos(pitch / 2) * np.sin(yaw / 2)
+        qz = np.cos(roll / 2) * np.cos(pitch / 2) * np.sin(yaw / 2) - np.sin(
+            roll / 2
+        ) * np.sin(pitch / 2) * np.cos(yaw / 2)
+        qw = np.cos(roll / 2) * np.cos(pitch / 2) * np.cos(yaw / 2) + np.sin(
+            roll / 2
+        ) * np.sin(pitch / 2) * np.sin(yaw / 2)
+
+        return [qx, qy, qz, qw]
         # return quat(w, x, y, z)
+        """
 
     def quat2rotmat(Q):
         # Extract the values from Q

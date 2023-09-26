@@ -22,7 +22,7 @@ class node:
         self.positions_local = []
         self.positions_global = []
         self.rotations = []
-        self.euler_rotation = []
+        # self.euler_rotation = []
         self.velocities = []
         self.channels = channels
 
@@ -31,12 +31,12 @@ class node:
             for i in range(nframes):
                 self.positions.append(joint_rotations[i][:3])
                 self.rotations.append(joint_rotations[i][3:])
-                self.euler_rotation.append(joint_rotations[i][3:])
-            self.rotations = [quat.euler2quat(x) for x in self.rotations]
+                # self.euler_rotation.append(joint_rotations[i][3:])
+            self.rotations = [quat.euler2quat(x, channels[3:]) for x in self.rotations]
         elif len(rotations) > 0:
             self.rotations = np.split(rotations, nframes)
-            self.rotations = [quat.euler2quat(x) for x in self.rotations]
-            self.euler_rotation = np.split(rotations, nframes)
+            self.rotations = [quat.euler2quat(x, channels) for x in self.rotations]
+            # self.euler_rotation = np.split(rotations, nframes)
 
         self.name = str(name)
         self.offsets = offsets
@@ -81,12 +81,20 @@ class node:
 
     def calculate_local_position(self):
         for index in range(len(self.rotations)):
-            self.positions_local.append(
-                np.matmul(
-                    quat.quat2rotmat(self.rotations[index]),
-                    self.offsets + self.parent.positions_local[index],
+            if len(self.channels) > 3:
+                self.positions_local.append(
+                    np.matmul(
+                        quat.quat2rotmat(self.rotations[index]),
+                        self.positions[index],
+                    )
                 )
-            )
+            else:
+                self.positions_local.append(
+                    np.matmul(
+                        quat.quat2rotmat(self.rotations[index]),
+                        self.offsets + self.parent.positions_local[index],
+                    )
+                )
 
     """
     def calculate_velocities(self, nframes):

@@ -8,11 +8,12 @@ from net.quat import quat
 
 
 class graph:
-    def __init__(self, nframes, frame_time):
+    def __init__(self, filename, nframes, frame_time):
         self.root = None
         self.nodes = {}
         self.nframes = int(nframes)
         self.frame_time = float(frame_time)
+        self.filename = filename
 
     def create_graph(self, joints, offsets, channels, motion_data, parents):
         num_endsites = 0
@@ -23,7 +24,7 @@ class graph:
 
         for index in range(len(joints)):
             joint_rotations = np.array([])
-            if "_End" in joints[index]:
+            if "_EndSite" in joints[index]:
                 self.nodes.update(
                     {
                         str(joints[index]): node(
@@ -32,7 +33,7 @@ class graph:
                             [],
                             [],
                             self.nframes,
-                            parents= self.nodes[parents[joints[index]]],
+                            parents=self.nodes[parents[joints[index]]],
                         ),
                     }
                 )
@@ -42,27 +43,47 @@ class graph:
             joint_channels = channels[index - num_endsites]
 
             if index == 0:
-                front_channel_pointer = front_channel_pointer + len(joint_channels)
-                for i in range(self.nframes):
-                    joint_rotations = np.append(
+                if len(joint_channels) > 0:
+                    front_channel_pointer = front_channel_pointer + len(joint_channels)
+                    for i in range(self.nframes):
+                        joint_rotations = np.append(
+                            joint_rotations,
+                            [
+                                motion_data[i][
+                                    back_channel_pointer:front_channel_pointer
+                                ]
+                            ],
+                        )
+                    self.root = node(
+                        str(joints[index]),
+                        offsets[index],
+                        joint_channels,
                         joint_rotations,
-                        [motion_data[i][back_channel_pointer:front_channel_pointer]],
+                        self.nframes,
+                        parents=None,
                     )
-                self.root = node(
-                    str(joints[index]),
-                    offsets[index],
-                    joint_channels,
-                    joint_rotations,
-                    self.nframes,
-                    parents=None,
-                )
-                self.nodes.update(
-                    {
-                        str(joints[index]): self.root,
-                    }
-                )
-                back_channel_pointer = front_channel_pointer
-                self.nodes[joints[index]].calculate_velocities(self.nframes)
+                    self.nodes.update(
+                        {
+                            str(joints[index]): self.root,
+                        }
+                    )
+                    back_channel_pointer = front_channel_pointer
+                    self.nodes[joints[index]].calculate_velocities(self.nframes)
+                else:
+                    self.root = node(
+                        str(joints[index]),
+                        offsets[index],
+                        [],
+                        [],
+                        self.nframes,
+                        parents=None,
+                    )
+                    self.nodes.update(
+                        {
+                            str(joints[index]): self.root,
+                        }
+                    )
+
             else:
                 front_channel_pointer = front_channel_pointer + len(joint_channels)
                 for i in range(self.nframes):
@@ -71,7 +92,7 @@ class graph:
                         [motion_data[i][back_channel_pointer:front_channel_pointer]],
                     )
                 # print(self.nodes.keys())
-                #print(parents)
+                # print(parents)
                 # print(
                 #    (list(self.nodes.values())[index - 1]).name,
                 #    " : ",
